@@ -32,7 +32,5 @@
   },
   "brandWarnings": [],
   "authWarnings": [],
-  "verdictFile": "/workspace/screenshots/app-builder-built.json",
-  "divergesFromBaseline": false,
-  "baselineReasons": []
+  "verdictFile": "/workspace/screenshots/app-builder-built.json"
 }

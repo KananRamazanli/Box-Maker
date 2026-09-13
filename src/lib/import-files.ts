@@ -51,9 +51,17 @@ function load(src: string): Promise<HTMLImageElement> {
 
 async function pdfToPages(file: File): Promise<PackPage[]> {
   const pdfjs = await import("pdfjs-dist");
-  pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
+  const worker = await import("pdfjs-dist/build/pdf.worker.min.mjs?url");
+  pdfjs.GlobalWorkerOptions.workerSrc = worker.default;
   const data = await file.arrayBuffer();
-  const doc = await pdfjs.getDocument({ data }).promise;
+  const doc = await pdfjs.getDocument({
+    data,
+    wasmUrl: "/wasm/",
+    useSystemFonts: true,
+    disableAutoFetch: true,
+    disableStream: true,
+    disableRange: true,
+  }).promise;
   const pages: PackPage[] = [];
   for (let i = 1; i <= doc.numPages; i++) {
     const page = await doc.getPage(i);

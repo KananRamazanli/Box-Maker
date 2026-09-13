@@ -1,29 +1,312 @@
 import { o as __toESM } from "../_runtime.mjs";
-import { L as require_react, v as require_jsx_runtime } from "../_libs/@tanstack/react-router+[...].mjs";
-import { a as ChevronDown, i as ChevronUp, n as Trash2, r as Download } from "../_libs/lucide-react.mjs";
-import { n as clsx, t as cva } from "../_libs/class-variance-authority+clsx.mjs";
-import { t as twMerge } from "../_libs/tailwind-merge.mjs";
-import { t as require_jspdf_node_min } from "../_libs/jspdf.mjs";
-import { n as create, t as persist } from "../_libs/zustand.mjs";
-import { t as PptxGenJS } from "../_libs/pptxgenjs.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/routes-C9ea_3JP.js
+import { L as require_react, _ as useRouter, f as createRouter, g as createRootRoute, h as createFileRoute, l as Scripts, m as lazyRouteComponent, p as Outlet, u as HeadContent, v as require_jsx_runtime } from "../_libs/@tanstack/react-router+[...].mjs";
+import { t as cva } from "../_libs/class-variance-authority+clsx.mjs";
+import { c as uid, l as useBook, n as PRESETS, r as cn, s as trimSize } from "./utils-LpS4ac5U.mjs";
+import { a as ChevronDown, i as ChevronUp, n as Trash2, r as Download, t as TriangleAlert } from "../_libs/lucide-react.mjs";
+import { a as union, i as string, n as number, r as object, t as literal } from "../_libs/zod.mjs";
+//#region node_modules/.nitro/vite/services/ssr/assets/router-Bnc4VCOM.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_runtime = require_jsx_runtime();
-var import_jspdf_node_min = require_jspdf_node_min();
-function cn(...inputs) {
-	return twMerge(clsx(inputs));
-}
-function uid() {
-	return crypto.randomUUID();
-}
-function loadImage(src) {
-	return new Promise((resolve, reject) => {
-		const img = new Image();
-		img.crossOrigin = "anonymous";
-		img.onload = () => resolve(img);
-		img.onerror = () => reject(/* @__PURE__ */ new Error("Could not load image"));
-		img.src = src;
+var __defProp = Object.defineProperty;
+var __exportAll = (all, no_symbols) => {
+	let target = {};
+	for (var name in all) __defProp(target, name, {
+		get: all[name],
+		enumerable: true
 	});
+	if (!no_symbols) __defProp(target, Symbol.toStringTag, { value: "Module" });
+	return target;
+};
+var FALLBACK_MESSAGE = "An unexpected error occurred. Try reloading the page.";
+function errorMessage(error) {
+	if (error instanceof Error && error.message) return error.message;
+	if (typeof error === "string" && error) return error;
+	return FALLBACK_MESSAGE;
+}
+function AppErrorComponent({ error }) {
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("main", {
+		className: "flex min-h-screen flex-col items-center justify-center gap-3 px-6 text-center bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-50",
+		children: [
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+				className: "text-red-500",
+				"aria-hidden": "true",
+				children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(TriangleAlert, {
+					className: "size-10",
+					strokeWidth: 2
+				})
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h1", {
+				className: "text-lg font-semibold",
+				children: "Something went wrong"
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+				className: "max-w-md text-sm break-words text-zinc-500 dark:text-zinc-400",
+				children: errorMessage(error)
+			})
+		]
+	});
+}
+/**
+* App-wide client provider mounted once near the root (in `src/routes/__root.tsx`):
+*
+*   <AuthProvider><Outlet /></AuthProvider>
+*
+* Better Auth's React client (`@/lib/auth/client`) needs NO context provider —
+* its `useSession()` works standalone — so this is a passthrough today. It's
+* kept as the single, stable mount point for any future client-side providers
+* (e.g. a toast or theme provider) without churning the root shell.
+*/
+function AuthProvider({ children }) {
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_jsx_runtime.Fragment, { children });
+}
+var CONNECTOR_TOKEN_READY_EVENT = "grok:connector-token-ready";
+function isGrokEmbedderOrigin(origin) {
+	try {
+		const url = new URL(origin);
+		if (url.protocol !== "https:" && url.protocol !== "http:") return false;
+		const host = url.hostname.toLowerCase();
+		if (host === "grok.com" || host.endsWith(".grok.com")) return true;
+		if (host === "localhost" || host === "127.0.0.1" || host === "[::1]") return true;
+		return false;
+	} catch {
+		return false;
+	}
+}
+function isSandboxPreviewGuestHost(hostname) {
+	const host = hostname.toLowerCase();
+	return host === "grok-sandbox.com" || host.endsWith(".grok-sandbox.com");
+}
+function isRemintPreviewPair(guestHost, parentHost) {
+	const guest = guestHost.toLowerCase();
+	const parent = parentHost.toLowerCase();
+	const i = guest.indexOf(".preview.");
+	if (i <= 0) return false;
+	const label = guest.slice(0, i);
+	const rest = guest.slice(i + 9);
+	if (label.includes(".") || !rest.includes(".")) return false;
+	return parent === rest || parent === `grok.${rest}`;
+}
+function resolveParentEmbedderOrigin(parentIsSelf, referrer, ancestorOrigin, guestHostname = "") {
+	if (parentIsSelf) return null;
+	for (const candidate of [referrer, ancestorOrigin ?? ""].filter(Boolean)) try {
+		const url = new URL(candidate.includes("://") ? candidate : `https://${candidate}`);
+		if (url.protocol !== "https:" && url.protocol !== "http:") continue;
+		if (isGrokEmbedderOrigin(url.origin)) return url.origin;
+		if (isSandboxPreviewGuestHost(guestHostname) || isRemintPreviewPair(guestHostname, url.hostname)) return url.origin;
+	} catch {}
+	return null;
+}
+/**
+* Guest side of the grok-web ↔ sandbox preview postMessage bridge.
+*
+* Activates only when this page is framed by an allowlisted Grok embedder.
+* Top-level runs (download/export, local `npm run dev`, deployed sites) noop.
+*/
+var PREVIEW_BRIDGE_CHANNEL = "grok-preview-bridge";
+var EnvelopeSchema = object({
+	channel: literal(PREVIEW_BRIDGE_CHANNEL),
+	version: number().int().positive(),
+	type: string().min(1)
+});
+var HelloSchema = EnvelopeSchema.extend({ type: literal("hello") });
+var NavigateSchema = EnvelopeSchema.extend({
+	type: literal("navigate"),
+	path: string().min(1)
+});
+var HistorySchema = EnvelopeSchema.extend({
+	type: literal("history"),
+	delta: union([literal(-1), literal(1)])
+});
+var ConnectorTokenReadySchema = EnvelopeSchema.extend({ type: literal("connector-token-ready") });
+function isSafeBridgePath(path) {
+	if (!path.startsWith("/") || path.startsWith("//") || path.includes("\\")) return false;
+	try {
+		return new URL(path, "https://preview.invalid").origin === "https://preview.invalid";
+	} catch {
+		return false;
+	}
+}
+/**
+* Origin of the Grok embedder framing this page, or null when the page runs
+* top-level (download/export, local `npm run dev`, deployed sites) or under a
+* non-Grok parent. Client-only; null during SSR.
+*/
+function resolveCurrentEmbedderOrigin() {
+	if (typeof window === "undefined") return null;
+	const ancestorOrigin = typeof location.ancestorOrigins !== "undefined" && location.ancestorOrigins.length > 0 ? location.ancestorOrigins[0] : null;
+	return resolveParentEmbedderOrigin(window.parent === window, document.referrer, ancestorOrigin, window.location.hostname);
+}
+/**
+* Install host↔guest messaging. Returns a dispose function.
+* Noops (returns a no-op dispose) when not embedded under a Grok parent.
+*/
+function installPreviewHostBridge(options = {}) {
+	const parentOrigin = resolveCurrentEmbedderOrigin();
+	if (parentOrigin === null) return () => {};
+	const ROOT_STATE_KEY = "__grokPreviewBridgeRoot";
+	const originalPushState = window.history.pushState.bind(window.history);
+	const originalReplaceState = window.history.replaceState.bind(window.history);
+	const isAtHistoryRoot = () => {
+		const state = window.history.state;
+		return Boolean(state && typeof state === "object" && state[ROOT_STATE_KEY] === true);
+	};
+	try {
+		const current = window.history.state;
+		if (!(current !== null && typeof current === "object" && Object.prototype.hasOwnProperty.call(current, ROOT_STATE_KEY))) {
+			const isRoot = window.history.length <= 1;
+			originalReplaceState(current && typeof current === "object" ? {
+				...current,
+				[ROOT_STATE_KEY]: isRoot
+			} : { [ROOT_STATE_KEY]: isRoot }, "", window.location.href);
+		}
+	} catch {}
+	const post = (message) => {
+		window.parent.postMessage(message, parentOrigin);
+	};
+	const reportLocation = () => {
+		post({
+			channel: PREVIEW_BRIDGE_CHANNEL,
+			version: 1,
+			type: "location",
+			path: window.location.pathname || "/",
+			search: window.location.search,
+			hash: window.location.hash
+		});
+	};
+	const reportRoutes = () => {
+		const paths = options.getRoutePaths?.() ?? [];
+		post({
+			channel: PREVIEW_BRIDGE_CHANNEL,
+			version: 1,
+			type: "routes",
+			paths
+		});
+	};
+	const defaultNavigate = (path) => {
+		if (!isSafeBridgePath(path)) return;
+		try {
+			const url = new URL(path, window.location.origin);
+			if (url.origin !== window.location.origin) return;
+			const next = `${url.pathname}${url.search}${url.hash}`;
+			window.history.pushState(window.history.state, "", next);
+			window.dispatchEvent(new PopStateEvent("popstate", { state: window.history.state }));
+		} catch {}
+	};
+	const navigate = (path) => {
+		if (!isSafeBridgePath(path)) return;
+		if (options.navigate) {
+			options.navigate(path);
+			return;
+		}
+		defaultNavigate(path);
+	};
+	const announce = () => {
+		reportLocation();
+		reportRoutes();
+		post({
+			channel: PREVIEW_BRIDGE_CHANNEL,
+			version: 1,
+			type: "ready"
+		});
+	};
+	const onHello = (data) => {
+		if (!HelloSchema.safeParse(data).success) return;
+		announce();
+	};
+	const onNavigate = (data) => {
+		const parsed = NavigateSchema.safeParse(data);
+		if (!parsed.success) return;
+		navigate(parsed.data.path);
+		queueMicrotask(reportLocation);
+	};
+	const onHistory = (data) => {
+		const parsed = HistorySchema.safeParse(data);
+		if (!parsed.success) return;
+		if (parsed.data.delta === -1 && isAtHistoryRoot()) return;
+		window.history.go(parsed.data.delta);
+	};
+	const onConnectorTokenReady = (data) => {
+		if (!ConnectorTokenReadySchema.safeParse(data).success) return;
+		window.dispatchEvent(new Event(CONNECTOR_TOKEN_READY_EVENT));
+	};
+	const hostMessageHandlers = /* @__PURE__ */ new Map([
+		["hello", onHello],
+		["navigate", onNavigate],
+		["history", onHistory],
+		["connector-token-ready", onConnectorTokenReady]
+	]);
+	const onMessage = (event) => {
+		if (event.source !== window.parent) return;
+		if (event.origin !== parentOrigin) return;
+		const envelope = EnvelopeSchema.safeParse(event.data);
+		if (!envelope.success || envelope.data.version !== 1) return;
+		hostMessageHandlers.get(envelope.data.type)?.(event.data);
+	};
+	const onPopState = () => {
+		reportLocation();
+	};
+	const onHashChange = () => {
+		reportLocation();
+	};
+	window.history.pushState = (data, unused, url) => {
+		const next = data && typeof data === "object" ? {
+			...data,
+			[ROOT_STATE_KEY]: false
+		} : data;
+		originalPushState(next, unused, url);
+		reportLocation();
+	};
+	window.history.replaceState = (data, unused, url) => {
+		const next = isAtHistoryRoot() ? {
+			...data && typeof data === "object" ? data : {},
+			[ROOT_STATE_KEY]: true
+		} : data;
+		originalReplaceState(next, unused, url);
+		reportLocation();
+	};
+	window.addEventListener("message", onMessage);
+	window.addEventListener("popstate", onPopState);
+	window.addEventListener("hashchange", onHashChange);
+	announce();
+	return () => {
+		window.removeEventListener("message", onMessage);
+		window.removeEventListener("popstate", onPopState);
+		window.removeEventListener("hashchange", onHashChange);
+		window.history.pushState = originalPushState;
+		window.history.replaceState = originalReplaceState;
+	};
+}
+/** Collect static path patterns from a TanStack route tree (best-effort). */
+function collectRoutePathsFromTree(routeTree) {
+	const paths = /* @__PURE__ */ new Set();
+	const walk = (node) => {
+		if (!node || typeof node !== "object") return;
+		const record = node;
+		const full = typeof record.fullPath === "string" ? record.fullPath : typeof record.path === "string" ? record.path : null;
+		if (full !== null && full !== "") paths.add(full.startsWith("/") ? full : `/${full}`);
+		else if (full === "") paths.add("/");
+		const children = record.children;
+		if (Array.isArray(children)) for (const child of children) walk(child);
+		else if (children && typeof children === "object") for (const child of Object.values(children)) walk(child);
+	};
+	walk(routeTree);
+	return [...paths];
+}
+/**
+* Mount once in `__root.tsx` so the Grok preview chrome can drive navigation
+* (and later receive registered routes). Noops when the app is not embedded.
+*/
+function PreviewHostBridge() {
+	const router = useRouter();
+	(0, import_react.useEffect)(() => {
+		return installPreviewHostBridge({
+			navigate: (path) => {
+				router.history.push(path);
+			},
+			getRoutePaths: () => collectRoutePathsFromTree(router.routeTree)
+		});
+	}, [router]);
+	return null;
 }
 var buttonVariants = cva("inline-flex items-center justify-center gap-2 rounded-[var(--radius-sm)] text-sm font-medium transition-colors duration-150 disabled:pointer-events-none disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70", {
 	variants: {
@@ -65,58 +348,6 @@ function Input({ className, ...props }) {
 		className: cn("h-10 w-full rounded-[var(--radius-sm)] border border-border bg-bg px-3 text-sm text-fg placeholder:text-subtle outline-none focus:ring-2 focus:ring-primary/50", className),
 		...props
 	});
-}
-var A4_LANDSCAPE = {
-	w: 297,
-	h: 210
-};
-var PRESETS = {
-	"a4-minus-1cm": {
-		id: "a4-minus-1cm",
-		label: "A4 minus 1 cm each edge",
-		hint: "277 × 190 mm — print on A4, cut 1 cm in",
-		w: 277,
-		h: 190
-	},
-	"11.5x7.7": {
-		id: "11.5x7.7",
-		label: "11.5 × 7.7 in",
-		hint: "292.1 × 195.6 mm — same as the search-book file",
-		w: 11.5 * 25.4,
-		h: 7.7 * 25.4
-	},
-	custom: {
-		id: "custom",
-		label: "Custom millimetres",
-		hint: "Set width and height",
-		w: 277,
-		h: 190
-	}
-};
-function pageGeom(pageW, pageH, marginX, marginY) {
-	return {
-		pageW,
-		pageH,
-		marginX,
-		marginY,
-		contentX: marginX,
-		contentY: marginY,
-		contentW: Math.max(10, pageW - marginX * 2),
-		contentH: Math.max(10, pageH - marginY * 2),
-		headerH: 12,
-		footerH: 7
-	};
-}
-function contain(iw, ih, boxW, boxH) {
-	const s = Math.min(boxW / iw, boxH / ih);
-	const w = iw * s;
-	const h = ih * s;
-	return {
-		x: (boxW - w) / 2,
-		y: (boxH - h) / 2,
-		w,
-		h
-	};
 }
 async function filesToPages(files) {
 	const out = [];
@@ -162,9 +393,17 @@ function load(src) {
 }
 async function pdfToPages(file) {
 	const pdfjs = await import("../_libs/pdfjs-dist.mjs").then((n) => n.t);
-	pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
+	const worker = await import("./pdf.worker.min-CA4SejP6.mjs");
+	pdfjs.GlobalWorkerOptions.workerSrc = worker.default;
 	const data = await file.arrayBuffer();
-	const doc = await pdfjs.getDocument({ data }).promise;
+	const doc = await pdfjs.getDocument({
+		data,
+		wasmUrl: "/wasm/",
+		useSystemFonts: true,
+		disableAutoFetch: true,
+		disableStream: true,
+		disableRange: true
+	}).promise;
 	const pages = [];
 	for (let i = 1; i <= doc.numPages; i++) {
 		const page = await doc.getPage(i);
@@ -191,205 +430,6 @@ async function pdfToPages(file) {
 	}
 	return pages;
 }
-var defaults = {
-	pages: [],
-	sizePreset: "a4-minus-1cm",
-	customW: 277,
-	customH: 190,
-	marginSide: 7.5,
-	marginTb: 5,
-	printOnA4: true,
-	holeGuide: true
-};
-var useBook = create()(persist((set, get) => ({
-	...defaults,
-	patch: (p) => set(p),
-	addPages: (pages) => set({ pages: [...get().pages, ...pages] }),
-	removePage: (id) => set({ pages: get().pages.filter((p) => p.id !== id) }),
-	clearPages: () => set({ pages: [] }),
-	movePage: (id, dir) => {
-		const list = [...get().pages];
-		const i = list.findIndex((p) => p.id === id);
-		const j = i + dir;
-		if (i < 0 || j < 0 || j >= list.length) return;
-		[list[i], list[j]] = [list[j], list[i]];
-		set({ pages: list });
-	}
-}), {
-	name: "traybook-v2",
-	skipHydration: true,
-	partialize: (s) => ({
-		sizePreset: s.sizePreset,
-		customW: s.customW,
-		customH: s.customH,
-		marginSide: s.marginSide,
-		marginTb: s.marginTb,
-		printOnA4: s.printOnA4,
-		holeGuide: s.holeGuide
-	}),
-	merge: (persisted, current) => ({
-		...current,
-		...typeof persisted === "object" && persisted ? persisted : {},
-		pages: current.pages ?? []
-	})
-}));
-function trimSize(s) {
-	if (s.sizePreset === "custom") return {
-		w: s.customW,
-		h: s.customH
-	};
-	const p = PRESETS[s.sizePreset];
-	return {
-		w: p.w,
-		h: p.h
-	};
-}
-function isPng(src) {
-	return src.startsWith("data:image/png") || src.toLowerCase().endsWith(".png");
-}
-async function buildPdf(book) {
-	if (book.pages.length === 0) throw new Error("Add pages first");
-	const trim = trimSize(book);
-	const onA4 = book.printOnA4;
-	const pageW = onA4 ? A4_LANDSCAPE.w : trim.w;
-	const pageH = onA4 ? A4_LANDSCAPE.h : trim.h;
-	const ox = onA4 ? (pageW - trim.w) / 2 : 0;
-	const oy = onA4 ? (pageH - trim.h) / 2 : 0;
-	const g = pageGeom(trim.w, trim.h, book.marginSide, book.marginTb);
-	const doc = new import_jspdf_node_min.jsPDF({
-		orientation: pageW >= pageH ? "landscape" : "portrait",
-		unit: "mm",
-		format: [pageW, pageH],
-		compress: true
-	});
-	for (let i = 0; i < book.pages.length; i++) {
-		if (i > 0) doc.addPage([pageW, pageH], pageW >= pageH ? "l" : "p");
-		if (onA4) drawCropMarks(doc, ox, oy, trim.w, trim.h);
-		if (book.holeGuide) drawHole(doc, ox, oy, trim.h, book.marginSide);
-		await drawPage(doc, book.pages[i].src, g, ox, oy);
-	}
-	return doc;
-}
-async function drawPage(doc, src, g, ox, oy) {
-	const img = await loadImage(src);
-	const box = contain(img.width, img.height, g.contentW, g.contentH);
-	const data = src.startsWith("data:") ? src : await toJpeg(src);
-	doc.addImage(data, isPng(data) ? "PNG" : "JPEG", ox + g.contentX + box.x, oy + g.contentY + box.y, box.w, box.h);
-}
-async function toJpeg(src) {
-	const img = await loadImage(src);
-	const canvas = document.createElement("canvas");
-	canvas.width = img.width;
-	canvas.height = img.height;
-	const ctx = canvas.getContext("2d");
-	if (!ctx) throw new Error("canvas");
-	ctx.fillStyle = "#fff";
-	ctx.fillRect(0, 0, canvas.width, canvas.height);
-	ctx.drawImage(img, 0, 0);
-	return canvas.toDataURL("image/jpeg", .9);
-}
-function drawCropMarks(doc, ox, oy, w, h) {
-	doc.setDrawColor(80);
-	doc.setLineWidth(.15);
-	const gap = 1.2;
-	const corners = [
-		[
-			ox,
-			oy,
-			-1,
-			-1
-		],
-		[
-			ox + w,
-			oy,
-			1,
-			-1
-		],
-		[
-			ox,
-			oy + h,
-			-1,
-			1
-		],
-		[
-			ox + w,
-			oy + h,
-			1,
-			1
-		]
-	];
-	for (const [x, y, dx, dy] of corners) {
-		doc.line(x + dx * gap, y, x + dx * 5.2, y);
-		doc.line(x, y + dy * gap, x, y + dy * 5.2);
-	}
-}
-function drawHole(doc, ox, oy, pageH, marginX) {
-	const cx = ox + marginX / 2;
-	const cy = oy + pageH / 2;
-	doc.setDrawColor(180);
-	doc.setLineWidth(.2);
-	doc.circle(cx, cy, 1.8, "S");
-}
-function mmToIn(mm) {
-	return mm / 25.4;
-}
-async function asDataUrl(src) {
-	if (src.startsWith("data:")) return src;
-	const img = await loadImage(src);
-	const canvas = document.createElement("canvas");
-	canvas.width = img.width;
-	canvas.height = img.height;
-	const ctx = canvas.getContext("2d");
-	if (!ctx) throw new Error("canvas");
-	ctx.fillStyle = "#fff";
-	ctx.fillRect(0, 0, canvas.width, canvas.height);
-	ctx.drawImage(img, 0, 0);
-	return canvas.toDataURL("image/jpeg", .9);
-}
-async function downloadPptx(book) {
-	if (book.pages.length === 0) throw new Error("Add pages first");
-	const trim = trimSize(book);
-	const wIn = mmToIn(trim.w);
-	const hIn = mmToIn(trim.h);
-	const pptx = new PptxGenJS();
-	pptx.defineLayout({
-		name: "BOOK",
-		width: wIn,
-		height: hIn
-	});
-	pptx.layout = "BOOK";
-	pptx.title = "Toolbox book";
-	const g = pageGeom(wIn, hIn, mmToIn(book.marginSide), mmToIn(book.marginTb));
-	for (const page of book.pages) {
-		const slide = pptx.addSlide();
-		slide.background = { color: "FFFFFF" };
-		const img = await loadImage(page.src);
-		const box = contain(img.width, img.height, g.contentW, g.contentH);
-		const data = await asDataUrl(page.src);
-		slide.addImage({
-			data,
-			x: g.contentX + box.x,
-			y: g.contentY + box.y,
-			w: box.w,
-			h: box.h
-		});
-		if (book.holeGuide) {
-			const d = .14;
-			slide.addShape("ellipse", {
-				x: g.marginX / 2 - d / 2,
-				y: hIn / 2 - d / 2,
-				w: d,
-				h: d,
-				line: {
-					color: "B4B4B4",
-					width: .75
-				},
-				fill: { type: "none" }
-			});
-		}
-	}
-	await pptx.writeFile({ fileName: "toolbox-book.pptx" });
-}
 function BookEditor() {
 	const book = useBook();
 	const [busy, setBusy] = (0, import_react.useState)(false);
@@ -414,6 +454,7 @@ function BookEditor() {
 		setErr(null);
 		setBusy(true);
 		try {
+			const { buildPdf } = await import("./pdf-CJ41zRyr.mjs");
 			(await buildPdf(book)).save("toolbox-book.pdf");
 		} catch (e) {
 			setErr(e instanceof Error ? e.message : "PDF export failed");
@@ -425,6 +466,7 @@ function BookEditor() {
 		setErr(null);
 		setBusy(true);
 		try {
+			const { downloadPptx } = await import("./pptx-C_F7jgmH.mjs");
 			await downloadPptx(book);
 		} catch (e) {
 			setErr(e instanceof Error ? e.message : "PPTX export failed");
@@ -772,7 +814,7 @@ function PageStrip() {
 		})]
 	});
 }
-function Home() {
+function AppShell() {
 	(0, import_react.useEffect)(() => {
 		Promise.resolve(useBook.persist.rehydrate());
 	}, []);
@@ -781,5 +823,93 @@ function Home() {
 		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(BookEditor, {}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(PageStrip, {})]
 	});
 }
+var styles_default = "/assets/styles-DI3pS1HO.css";
+var APP_NAME = "TrayBook";
+var Route$2 = createRootRoute({
+	head: () => ({
+		meta: [
+			{ charSet: "utf-8" },
+			{
+				name: "viewport",
+				content: "width=device-width, initial-scale=1"
+			},
+			{ title: APP_NAME },
+			{
+				name: "theme-color",
+				content: "#102F4A"
+			},
+			{
+				name: "description",
+				content: "Same-size toolbox manuals — cover, tray photos and parts lists on one print size."
+			}
+		],
+		links: [
+			{
+				rel: "icon",
+				type: "image/svg+xml",
+				href: "/favicon.svg"
+			},
+			{
+				rel: "stylesheet",
+				href: styles_default
+			},
+			{
+				rel: "manifest",
+				href: "/__grok/manifest.webmanifest"
+			},
+			{
+				rel: "apple-touch-icon",
+				href: "/__grok/icon-180.png"
+			},
+			{
+				rel: "preconnect",
+				href: "https://fonts.googleapis.com"
+			},
+			{
+				rel: "preconnect",
+				href: "https://fonts.gstatic.com",
+				crossOrigin: "anonymous"
+			},
+			{
+				rel: "stylesheet",
+				href: "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+			}
+		]
+	}),
+	component: () => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("html", {
+		lang: "en",
+		suppressHydrationWarning: true,
+		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("head", { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(HeadContent, {}) }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("body", { children: [
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(PreviewHostBridge, {}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(AuthProvider, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Outlet, {}) }),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Scripts, {})
+		] })]
+	}),
+	notFoundComponent: AppShell
+});
+var $$splitComponentImporter$1 = () => import("./routes-CS1O-dcc.mjs");
+var Route$1 = createFileRoute("/")({ component: lazyRouteComponent($$splitComponentImporter$1, "component") });
+var $$splitComponentImporter = () => import("../_-D_7zYclZ.mjs");
+var Route = createFileRoute("/$")({ component: lazyRouteComponent($$splitComponentImporter, "component") });
+var rootRouteChildren = {
+	IndexRoute: Route$1.update({
+		id: "/",
+		path: "/",
+		getParentRoute: () => Route$2
+	}),
+	SplatRoute: Route.update({
+		id: "/$",
+		path: "/$",
+		getParentRoute: () => Route$2
+	})
+};
+var routeTree = Route$2._addFileChildren(rootRouteChildren)._addFileTypes();
+var router_exports = /* @__PURE__ */ __exportAll({ getRouter: () => getRouter });
+function getRouter() {
+	return createRouter({
+		routeTree,
+		defaultErrorComponent: AppErrorComponent
+	});
+}
 //#endregion
-export { Home as component };
+export { AppShell as n, router_exports as t };

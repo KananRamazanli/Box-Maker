@@ -2,8 +2,6 @@ import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/field";
 import { PRESETS } from "@/lib/geometry";
 import { filesToPages } from "@/lib/import-files";
-import { buildPdf } from "@/lib/pdf";
-import { downloadPptx } from "@/lib/pptx";
 import { trimSize, useBook } from "@/lib/store";
 import { ChevronDown, ChevronUp, Download, Trash2 } from "lucide-react";
 import { useState } from "react";
@@ -34,6 +32,7 @@ export function BookEditor() {
     setErr(null);
     setBusy(true);
     try {
+      const { buildPdf } = await import("@/lib/pdf");
       const doc = await buildPdf(book);
       doc.save("toolbox-book.pdf");
     } catch (e) {
@@ -47,6 +46,7 @@ export function BookEditor() {
     setErr(null);
     setBusy(true);
     try {
+      const { downloadPptx } = await import("@/lib/pptx");
       await downloadPptx(book);
     } catch (e) {
       setErr(e instanceof Error ? e.message : "PPTX export failed");
