@@ -1,0 +1,38 @@
+{
+  "url": "http://127.0.0.1:8081/",
+  "viewports": {
+    "desktop": {
+      "width": 1280,
+      "height": 800,
+      "status": 200,
+      "title": "TrayBook",
+      "hasCanvas": false,
+      "bodyTextLen": 769,
+      "bodyTextHash": "e32eb73aef8909f7a1906e2b4161c22dda478350d67552f7e7873c9efe84cbdf",
+      "bodyTextPrefix": "PRINT PACK TrayBook Combine the cover, photos and manual you alr",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-built.png"
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "status": 200,
+      "title": "TrayBook",
+      "hasCanvas": false,
+      "bodyTextLen": 769,
+      "bodyTextHash": "e32eb73aef8909f7a1906e2b4161c22dda478350d67552f7e7873c9efe84cbdf",
+      "bodyTextPrefix": "PRINT PACK TrayBook Combine the cover, photos and manual you alr",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-built-mobile.png"
+    }
+  },
+  "brandWarnings": [],
+  "authWarnings": [],
+  "verdictFile": "/workspace/screenshots/app-builder-built.json",
+  "divergesFromBaseline": false,
+  "baselineReasons": []
+}
